@@ -6,7 +6,6 @@ var _ = require('underscore');
 var async = require("async");
 var winston = require('winston');
 var VError = require('verror');
-var htmlToJson = require('html-to-json');
 var path = require('path')
 var childProcess = require('child_process')
 var phantomjs = require('phantomjs-prebuilt')
@@ -48,9 +47,17 @@ parsepages();
 //every 30 minute
 setInterval(parsepages, 1000 * 60* 30);
 
-
 app.get('/', function(req, res) {
+    logger.info('/');
     res.json(list);
+});
+app.get('/:category', function(req, res) {
+    var category = req.params.category;
+    logger.info('/',category);
+    logger.info('/list length',list.length);
+    var searchResult = list.filter(function(item){logger.info(item.category,category,item.category==category);return item.category==category;})
+    logger.info('/searchResult length',searchResult.length);
+    res.json(searchResult);
 });
 
 app.listen(8080, function() {
@@ -66,11 +73,14 @@ function parsepages() {
     for (var i = 0; i < targeturls.length; i++) {
         var url = targeturls[i].url;
         var category = targeturls[i].category;
-        parsePage(url,function(err,result){
-            result.forEach(function(item){
-                list.push({category:category,id:item.id,model:item.model,link:item.link,price:item.price,imglink:item.imglink,link:item.link});
-            })
-        });
+        (function (url,category){
+            logger.info(url,category)
+            parsePage(url,function(err,result){
+                result.forEach(function(item){
+                    list.push({category:category,id:item.id,model:item.model,link:item.link,price:item.price,imglink:item.imglink,link:item.link});
+                })
+            });
+        })(url,category);
     }
 
 }
